@@ -1,0 +1,6 @@
+{
+  "name": "GOVAI",
+  "description": "Trợ lý công vụ số ứng dụng AI hỗ trợ số hóa hồ sơ và xử lý nghiệp vụ hành chính",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

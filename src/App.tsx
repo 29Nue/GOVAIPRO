@@ -668,6 +668,101 @@ const handleDownloadDoc = (doc: any) => {
   document.body.removeChild(a);
 };
 
+// Hàm tải xuống file Word
+const downloadWordFile = (content: string): void => {
+  try {
+    // Format nội dung với style đẹp
+    const formattedContent = content
+      .split('\n')
+      .map(line => {
+        // Xử lý các heading
+        if (line.trim().startsWith('I.') || line.trim().startsWith('II.') || line.trim().startsWith('III.')) {
+          return `<p style="font-weight: bold; margin-top: 12px; font-size: 14px;">${line}</p>`;
+        }
+        // Xử lý các mục con
+        if (line.trim().match(/^\d+\./)) {
+          return `<p style="margin-left: 20px; font-weight: 600; font-size: 13px;">${line}</p>`;
+        }
+        // Xử lý các dấu gạch đầu dòng
+        if (line.trim().startsWith('-')) {
+          return `<p style="margin-left: 30px; font-size: 13px;">${line}</p>`;
+        }
+        // Xử lý tiêu đề
+        if (line.trim() === 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM' || 
+            line.trim() === 'Độc lập - Tự do - Hạnh phúc') {
+          return `<p style="text-align: center; font-weight: bold; font-size: 15px;">${line}</p>`;
+        }
+        if (line.trim() === 'BIÊN BẢN CUỘC HỌP') {
+          return `<p style="text-align: center; font-weight: bold; font-size: 18px; text-transform: uppercase; margin: 20px 0;">${line}</p>`;
+        }
+        // Text thường
+        if (line.trim()) {
+          return `<p style="font-size: 13px; line-height: 1.6; margin: 4px 0;">${line}</p>`;
+        }
+        return '<br/>';
+      })
+      .join('');
+
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' 
+            xmlns:w='urn:schemas-microsoft-com:office:word' 
+            xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset="utf-8">
+        <title>Biên bản cuộc họp</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          body { 
+            font-family: 'Times New Roman', Times, serif; 
+            font-size: 13px; 
+            line-height: 1.6; 
+            padding: 50px;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          .content {
+            max-width: 100%;
+          }
+          p {
+            margin: 4px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="content">
+          ${formattedContent}
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Thêm BOM để hỗ trợ UTF-8
+    const blob = new Blob(['\uFEFF' + htmlContent], { 
+      type: 'application/msword;charset=utf-8' 
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.download = `Bien_ban_cuoc_hop_${dateStr}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Lỗi tải file Word:', error);
+    alert('Có lỗi xảy ra khi tải file Word. Vui lòng thử lại.');
+  }
+};
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 font-sans" id="govai-app">
       {/* SIDEBAR NAVIGATION */}
@@ -1764,203 +1859,257 @@ const handleDownloadDoc = (doc: any) => {
           )}
 
           {/* ==================== 5. MODULE 4: MEETING VIEW ==================== */}
-          {activeTab === 'meeting' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6" id="view-meeting">
-              {/* Left sidebar: Audio upload and meetings list */}
-              <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col h-[calc(100vh-10.5rem)]">
-                <div>
-                  <h3 className="font-bold text-slate-800 mb-3">Tải lên ghi âm cuộc họp</h3>
-                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-6 bg-slate-50/50 hover:bg-blue-50/50 hover:border-blue-400 cursor-pointer transition-all">
-                    <div className="text-center">
-                      <div className="bg-purple-100 p-3 rounded-full text-purple-600 inline-block mb-2 shadow-sm">
-                        <Mic className="w-5 h-5" />
-                      </div>
-                      <p className="text-xs font-bold text-slate-700">Tải lên tệp âm thanh ghi âm (.mp3, .wav)</p>
-                      <p className="text-[10px] text-slate-400 mt-1">Trợ lý AI sẽ chuyển giọng nói thành văn bản & sinh biên bản họp</p>
-                    </div>
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={handleMeetingUpload}
-                      className="hidden"
-                      disabled={isTranscribing}
-                    />
-                  </label>
+{activeTab === 'meeting' && (
+  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6" id="view-meeting">
+    {/* Left sidebar: Audio upload and meetings list */}
+    <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col h-[calc(100vh-10.5rem)]">
+      <div>
+        <h3 className="font-bold text-slate-800 mb-3">Tải lên ghi âm cuộc họp</h3>
+        <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-6 bg-slate-50/50 hover:bg-blue-50/50 hover:border-blue-400 cursor-pointer transition-all">
+          <div className="text-center">
+            <div className="bg-purple-100 p-3 rounded-full text-purple-600 inline-block mb-2 shadow-sm">
+              <Mic className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-bold text-slate-700">Tải lên tệp âm thanh ghi âm (.mp3, .wav)</p>
+            <p className="text-[10px] text-slate-400 mt-1">Trợ lý AI sẽ chuyển giọng nói thành văn bản & sinh biên bản họp</p>
+          </div>
+          <input
+            type="file"
+            accept="audio/*"
+            onChange={handleMeetingUpload}
+            className="hidden"
+            disabled={isTranscribing}
+          />
+        </label>
 
-                  {isTranscribing && (
-                    <div className="mt-3 flex items-center space-x-2 text-xs text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2 rounded-lg">
-                      <RefreshCw className="w-4 h-4 animate-spin text-purple-600" />
-                      <span className="font-semibold">Đang nhận diện giọng nói tiếng Việt và xây dựng biên bản...</span>
-                    </div>
-                  )}
+        {isTranscribing && (
+          <div className="mt-3 flex items-center space-x-2 text-xs text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2 rounded-lg">
+            <RefreshCw className="w-4 h-4 animate-spin text-purple-600" />
+            <span className="font-semibold">Đang nhận diện giọng nói tiếng Việt và xây dựng biên bản...</span>
+          </div>
+        )}
+      </div>
+
+      <hr className="border-slate-100 my-4" />
+
+      {/* Meetings list */}
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-2">Biên bản cuộc họp đã xử lý</span>
+        {meetings.map(meet => {
+          // Giải mã tên file hiển thị đúng tiếng Việt
+          const displayName = (() => {
+            try {
+              return decodeURIComponent(meet.originalName);
+            } catch {
+              return meet.originalName;
+            }
+          })();
+
+          return (
+            <div
+              key={meet.id}
+              onClick={() => setSelectedMeetingId(meet.id)}
+              className={`p-3.5 rounded-xl border cursor-pointer transition-all relative group ${
+                selectedMeetingId === meet.id
+                  ? 'border-purple-500 bg-purple-50/50'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-3 overflow-hidden">
+                  <div className={`p-2 rounded-lg shrink-0 ${
+                    selectedMeetingId === meet.id ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    <Mic className="w-4 h-4" />
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-xs font-bold text-slate-800 truncate">{displayName}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{new Date(meet.uploadedAt).toLocaleDateString('vi-VN')} • {meet.speakers?.length || 2} Người phát biểu</p>
+                  </div>
                 </div>
 
-                <hr className="border-slate-100 my-4" />
+                {/* Delete meeting button */}
+                <button
+                  onClick={(e) => handleDeleteMeeting(meet.id, e)}
+                  className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
 
-                {/* Meetings list */}
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-2">Biên bản cuộc họp đã xử lý</span>
-                  {meetings.map(meet => (
-                    <div
-                      key={meet.id}
-                      onClick={() => setSelectedMeetingId(meet.id)}
-                      className={`p-3.5 rounded-xl border cursor-pointer transition-all relative group ${
-                        selectedMeetingId === meet.id
-                          ? 'border-purple-500 bg-purple-50/50'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3 overflow-hidden">
-                          <div className={`p-2 rounded-lg shrink-0 ${
-                            selectedMeetingId === meet.id ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            <Mic className="w-4 h-4" />
-                          </div>
-                          <div className="overflow-hidden">
-                            <p className="text-xs font-bold text-slate-800 truncate">{meet.originalName}</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">{new Date(meet.uploadedAt).toLocaleDateString('vi-VN')} • {meet.speakers?.length || 2} Người phát biểu</p>
-                          </div>
-                        </div>
+        {meetings.length === 0 && (
+          <p className="text-xs text-slate-400 text-center py-8">Chưa có cuộc họp số nào được lưu trữ.</p>
+        )}
+      </div>
+    </div>
 
-                        {/* Delete meeting button */}
-                        <button
-                          onClick={(e) => handleDeleteMeeting(meet.id, e)}
-                          className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+    {/* Right area: Transcripts and Editable Minutes */}
+    <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-[calc(100vh-10.5rem)] overflow-y-auto">
+      {currentMeeting ? (
+        <div className="space-y-6" id="meeting-details-panel">
+          {/* Header */}
+          <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] bg-purple-100 text-purple-800 font-extrabold px-3 py-1 rounded-full uppercase">Số hóa biên bản từ ghi âm</span>
+              <h2 className="text-base font-black text-slate-800 mt-2">
+                {(() => {
+                  try {
+                    return decodeURIComponent(currentMeeting.originalName);
+                  } catch {
+                    return currentMeeting.originalName;
+                  }
+                })()}
+              </h2>
+            </div>
+          </div>
 
-                  {meetings.length === 0 && (
-                    <p className="text-xs text-slate-400 text-center py-8">Chưa có cuộc họp số nào được lưu trữ.</p>
-                  )}
+          {/* Real Audio Player - Phát file thật từ server */}
+          {currentMeeting.audioFileName ? (
+            <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="bg-purple-100 p-2.5 rounded-full text-purple-600">
+                  <Mic className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-slate-800">Phát lại ghi âm cuộc họp</p>
+                  <p className="text-xs text-slate-500">
+                    {(() => {
+                      try {
+                        return decodeURIComponent(currentMeeting.originalName);
+                      } catch {
+                        return currentMeeting.originalName;
+                      }
+                    })()}
+                  </p>
                 </div>
               </div>
-
-              {/* Right area: Transcripts and Editable Minutes */}
-              <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-[calc(100vh-10.5rem)] overflow-y-auto">
-                {currentMeeting ? (
-                  <div className="space-y-6" id="meeting-details-panel">
-                    {/* Header */}
-                    <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] bg-purple-100 text-purple-800 font-extrabold px-3 py-1 rounded-full uppercase">Số hóa biên bản từ ghi âm</span>
-                        <h2 className="text-base font-black text-slate-800 mt-2">{currentMeeting.originalName}</h2>
-                      </div>
-                    </div>
-
-                    {/* Mini Player for demo purposes */}
-                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          onClick={() => setIsPlayingAudio(!isPlayingAudio)}
-                          className="bg-purple-600 hover:bg-purple-500 text-white p-3 rounded-full cursor-pointer transition shadow-md"
-                        >
-                          {isPlayingAudio ? (
-                            <span className="h-4 w-4 block relative">
-                              <span className="absolute left-0.5 top-1 bg-white w-1 h-2 animate-bounce"></span>
-                              <span className="absolute left-1.5 top-1 bg-white w-1 h-3 animate-bounce delay-100"></span>
-                              <span className="absolute left-2.5 top-1 bg-white w-1 h-2 animate-bounce delay-200"></span>
-                            </span>
-                          ) : (
-                            <span className="triangle-play block w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-8 border-l-white ml-0.5"></span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-800">Bản phát ghi âm cuộc họp</p>
-                          <p className="text-[10px] text-slate-400">{isPlayingAudio ? 'Đang phát âm thanh...' : 'Đã tải lên sẵn sàng phát'}</p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-mono font-bold text-slate-500">Giả lập phát lại</span>
-                    </div>
-
-                    {/* Summary & Speakers */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl">
-                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">Chủ thể tham gia họp</span>
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {currentMeeting.speakers?.map((sp: string, sIdx: number) => (
-                            <span key={sIdx} className="bg-purple-100 text-purple-800 text-[11px] font-bold px-2.5 py-1 rounded-full">
-                              {sp}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl">
-                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">Tóm tắt ngắn gọn</span>
-                        <p className="text-xs text-slate-700 leading-relaxed font-semibold mt-1">{currentMeeting.summary}</p>
-                      </div>
-                    </div>
-
-                    {/* Action Items List */}
-                    {currentMeeting.actionItems && currentMeeting.actionItems.length > 0 && (
-                      <div className="space-y-2">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Danh sách kết luận & Chỉ đạo phân công việc</span>
-                        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                          <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                              <tr className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
-                                <th className="p-3">Nhiệm vụ chỉ đạo</th>
-                                <th className="p-3">Người chịu trách nhiệm</th>
-                                <th className="p-3 text-right">Thời hạn</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {currentMeeting.actionItems.map((item: any, iIdx: number) => (
-                                <tr key={iIdx} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50 bg-white">
-                                  <td className="p-3 font-semibold text-slate-800">{item.task}</td>
-                                  <td className="p-3 font-bold text-purple-700">{item.assignee}</td>
-                                  <td className="p-3 text-right font-mono font-bold text-slate-500">{item.deadline}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Twin Panel: Transcript vs Official Minutes */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Transcript */}
-                      <div className="space-y-2 flex flex-col h-[28rem]">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nội dung ghi âm thô (Speech To Text)</span>
-                        <div className="flex-1 bg-slate-50 border border-slate-100 p-4 rounded-xl overflow-y-auto text-xs text-slate-700 font-semibold leading-relaxed whitespace-pre-wrap select-text">
-                          {currentMeeting.transcript}
-                        </div>
-                      </div>
-
-                      {/* Official Minutes template */}
-                      <div className="space-y-2 flex flex-col h-[28rem]">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Dự thảo Biên bản cuộc họp chuẩn</span>
-                          <button
-                            onClick={() => copyToClipboard(currentMeeting.minutes, setMinutesCopied)}
-                            className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
-                          >
-                            {minutesCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-                            <span>{minutesCopied ? 'Đã sao chép' : 'Sao chép biên bản'}</span>
-                          </button>
-                        </div>
-                        <div className="flex-1 bg-white border border-slate-200 p-4 rounded-xl overflow-y-auto text-xs text-slate-800 font-serif leading-relaxed whitespace-pre-wrap select-text shadow-inner">
-                          {currentMeeting.minutes}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center p-8">
-                    <Mic className="w-16 h-16 text-slate-200 mb-4 stroke-1" />
-                    <h3 className="font-bold text-slate-600 mb-1">Kết quả cuộc họp số</h3>
-                    <p className="text-xs max-w-sm leading-relaxed">Chọn một bản cuộc họp số đã ghi âm ở danh sách bên trái hoặc tải lên file âm thanh mới để chuyển chữ, trích chỉ đạo nhiệm vụ hành chính và tạo biên bản chuẩn công sở.</p>
-                  </div>
-                )}
+              <audio 
+                controls 
+                className="w-full h-12 rounded-lg"
+                onPlay={() => setIsPlayingAudio(true)}
+                onPause={() => setIsPlayingAudio(false)}
+                onEnded={() => setIsPlayingAudio(false)}
+              >
+                <source 
+                  src={`/api/meeting/audio/${currentMeeting.audioFileName}`} 
+                  type="audio/mpeg" 
+                />
+                Trình duyệt của bạn không hỗ trợ phát audio.
+              </audio>
+            </div>
+          ) : (
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl">
+              <div className="flex items-center space-x-3">
+                <div className="bg-amber-100 p-2 rounded-full text-amber-600">
+                  <Mic className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-amber-800">Không có file ghi âm</p>
+                  <p className="text-xs text-amber-600">File audio không có sẵn để phát lại</p>
+                </div>
               </div>
             </div>
           )}
+
+          {/* Summary & Speakers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">Chủ thể tham gia họp</span>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {currentMeeting.speakers?.map((sp: string, sIdx: number) => (
+                  <span key={sIdx} className="bg-purple-100 text-purple-800 text-[11px] font-bold px-2.5 py-1 rounded-full">
+                    {sp}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">Tóm tắt ngắn gọn</span>
+              <p className="text-xs text-slate-700 leading-relaxed font-semibold mt-1">{currentMeeting.summary}</p>
+            </div>
+          </div>
+
+          {/* Action Items List */}
+          {currentMeeting.actionItems && currentMeeting.actionItems.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Danh sách kết luận & Chỉ đạo phân công việc</span>
+              <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                      <th className="p-3">Nhiệm vụ chỉ đạo</th>
+                      <th className="p-3">Người chịu trách nhiệm</th>
+                      <th className="p-3 text-right">Thời hạn</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentMeeting.actionItems.map((item: any, iIdx: number) => (
+                      <tr key={iIdx} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50 bg-white">
+                        <td className="p-3 font-semibold text-slate-800">{item.task}</td>
+                        <td className="p-3 font-bold text-purple-700">{item.assignee}</td>
+                        <td className="p-3 text-right font-mono font-bold text-slate-500">{item.deadline}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Twin Panel: Transcript vs Official Minutes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Transcript */}
+            <div className="space-y-2 flex flex-col h-[28rem]">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nội dung ghi âm thô (Speech To Text)</span>
+              <div className="flex-1 bg-slate-50 border border-slate-100 p-4 rounded-xl overflow-y-auto text-xs text-slate-700 font-semibold leading-relaxed whitespace-pre-wrap select-text">
+                {currentMeeting.transcript}
+              </div>
+            </div>
+
+            {/* Official Minutes template */}
+            <div className="space-y-2 flex flex-col h-[28rem]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Dự thảo Biên bản cuộc họp chuẩn</span>
+                <div className="flex items-center space-x-2">
+                  {/* Copy button */}
+                  <button
+                    onClick={() => copyToClipboard(currentMeeting.minutes, setMinutesCopied)}
+                    className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
+                  >
+                    {minutesCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{minutesCopied ? 'Đã sao chép' : 'Sao chép'}</span>
+                  </button>
+                  
+                  {/* Download Word button */}
+                  <button
+                    onClick={() => downloadWordFile(currentMeeting.minutes)}
+                    className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Tải Word</span>
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 bg-white border border-slate-200 p-4 rounded-xl overflow-y-auto text-xs text-slate-800 font-serif leading-relaxed whitespace-pre-wrap select-text shadow-inner">
+                {currentMeeting.minutes}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center p-8">
+          <Mic className="w-16 h-16 text-slate-200 mb-4 stroke-1" />
+          <h3 className="font-bold text-slate-600 mb-1">Kết quả cuộc họp số</h3>
+          <p className="text-xs max-w-sm leading-relaxed">Chọn một bản cuộc họp số đã ghi âm ở danh sách bên trái hoặc tải lên file âm thanh mới để chuyển chữ, trích chỉ đạo nhiệm vụ hành chính và tạo biên bản chuẩn công sở.</p>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
           {/* ==================== 6. HISTORY VIEW ==================== */}
           {activeTab === 'history' && (

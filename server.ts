@@ -738,7 +738,15 @@ app.post('/api/meeting/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Không tìm thấy tệp ghi âm cuộc họp' });
     }
 
-    const { originalname, filename, mimetype, path: filePath } = req.file;
+    const originalName = Buffer
+      .from(req.file.originalname, "latin1")
+      .toString("utf8");
+
+    const {
+      filename,
+      mimetype,
+      path: filePath,
+    } = req.file;
     const fileBase64 = fs.readFileSync(filePath).toString('base64');
 
     const ai = getGeminiClient(req.headers);
@@ -818,7 +826,7 @@ app.post('/api/meeting/upload', upload.single('file'), async (req, res) => {
     const meetingId = 'meet-' + Date.now();
     const newMeeting: MeetingRecord = {
       id: meetingId,
-      originalName: originalname,
+      originalName: originalName,
       filename,
       uploadedAt: new Date().toISOString(),
       transcript: meetingResult.transcript,

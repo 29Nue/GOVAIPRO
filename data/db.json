@@ -92,5 +92,35 @@
       ]
     }
   ],
-  "meetings": []
+  "meetings": [
+    {
+      "id": "meet-1783151500834",
+      "originalName": "cuộc họp số hóa.mp3",
+      "filename": "1783151481877-236256981.mp3",
+      "uploadedAt": "2026-07-04T07:51:40.834Z",
+      "transcript": "Người phát biểu 1: Kính chào các đồng chí. Hôm nay chúng ta họp để triển khai kế hoạch số hóa hồ sơ hành chính trong quý 3 năm 2026. Hiện nay việc lưu trữ hồ sơ giấy vẫn còn chiếm tỷ lệ cao, gây khó khăn trong quá trình tra cứu và quản lý. Vì vậy, các đơn vị cần đẩy nhanh tiến độ quét tài liệu, chuẩn hóa dữ liệu và cập nhật lên hệ thống quản lý hồ sơ điện tử. Trung tâm Công nghệ Thông tin chịu trách nhiệm cài đặt và hướng dẫn sử dụng phần mềm trước ngày 15 tháng 7 năm 2026. Phòng Hành chính lập danh sách hồ sơ ưu tiên số hóa và hoàn thành trước ngày mùng 10 tháng 7 năm 2026. Đề nghị các đơn vị phối hợp thực hiện đúng tiến độ để đảm bảo kế hoạch chuyển đổi số của đơn vị. Cuộc họp kết thúc, xin cảm ơn các đồng chí.",
+      "summary": "Cuộc họp triển khai kế hoạch số hóa hồ sơ hành chính trong Quý 3 năm 2026. Tình hình hiện tại cho thấy việc lưu trữ hồ sơ giấy còn chiếm tỷ lệ cao, gây khó khăn trong tra cứu và quản lý. Cuộc họp đề ra yêu cầu các đơn vị cần đẩy nhanh tiến độ quét tài liệu, chuẩn hóa dữ liệu và cập nhật hệ thống quản lý hồ sơ điện tử. Các nhiệm vụ cụ thể được giao cho Trung tâm Công nghệ Thông tin và Phòng Hành chính với các thời hạn rõ ràng, đồng thời yêu cầu các đơn vị phối hợp để đảm bảo kế hoạch chuyển đổi số.",
+      "speakers": [
+        "Người phát biểu 1"
+      ],
+      "actionItems": [
+        {
+          "task": "Cài đặt và hướng dẫn sử dụng phần mềm quản lý hồ sơ điện tử",
+          "assignee": "Trung tâm Công nghệ Thông tin",
+          "deadline": "15/07/2026"
+        },
+        {
+          "task": "Lập danh sách hồ sơ ưu tiên số hóa và hoàn thành việc số hóa",
+          "assignee": "Phòng Hành chính",
+          "deadline": "10/07/2026"
+        },
+        {
+          "task": "Phối hợp thực hiện đúng tiến độ kế hoạch số hóa hồ sơ hành chính",
+          "assignee": "Các đơn vị",
+          "deadline": "Theo kế hoạch tổng thể Quý 3/2026"
+        }
+      ],
+      "minutes": "# BIÊN BẢN HỌP\n\n**Về việc:** Triển khai Kế hoạch số hóa hồ sơ hành chính Quý 3 năm 2026\n\n**Thời gian:** [Thời gian họp]\n\n**Địa điểm:** [Địa điểm họp]\n\n**Thành phần tham dự:** Các đồng chí lãnh đạo và đại diện các đơn vị liên quan.\n\n**Chủ trì:** [Người chủ trì]\n\n## I. NỘI DUNG CUỘC HỌP\n\n1.  **Mục đích cuộc họp:**\n    *   Triển khai chi tiết kế hoạch số hóa hồ sơ hành chính trong Quý 3 năm 2026.\n\n2.  **Tình hình hiện tại:**\n    *   Việc lưu trữ hồ sơ giấy còn chiếm tỷ lệ cao, gây khó khăn trong quá trình tra cứu và quản lý hồ sơ.\n\n3.  **Yêu cầu và giải pháp:**\n    *   Các đơn vị cần đẩy nhanh tiến độ quét tài liệu, chuẩn hóa dữ liệu và cập nhật lên hệ thống quản lý hồ sơ điện tử.\n\n## II. PHÂN CÔNG NHIỆM VỤ VÀ THỜI HẠN\n\n1.  **Trung tâm Công nghệ Thông tin:**\n    *   **Nhiệm vụ:** Chịu trách nhiệm cài đặt và hướng dẫn sử dụng phần mềm quản lý hồ sơ điện tử.\n    *   **Thời hạn:** Trước ngày 15 tháng 7 năm 2026.\n\n2.  **Phòng Hành chính:**\n    *   **Nhiệm vụ:** Lập danh sách hồ sơ ưu tiên số hóa và hoàn thành việc số hóa các hồ sơ này.\n    *   **Thời hạn:** Trước ngày 10 tháng 7 năm 2026.\n\n3.  **Các đơn vị:**\n    *   **Nhiệm vụ:** Phối hợp chặt chẽ, thực hiện đúng tiến độ để đảm bảo kế hoạch chuyển đổi số của đơn vị.\n    *   **Thời hạn:** Theo kế hoạch tổng thể Quý 3 năm 2026.\n\n## III. KẾT LUẬN\n\nToàn thể các đơn vị cần nghiêm túc thực hiện các nhiệm vụ đã được phân công để đảm bảo hoàn thành mục tiêu chuyển đổi số hồ sơ hành chính theo đúng kế hoạch đề ra.\n\nCuộc họp kết thúc.\n\n**Thư ký cuộc họp**\n\n[Ký tên]\n\n[Họ và tên]"
+    }
+  ]
 }

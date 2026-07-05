@@ -779,6 +779,229 @@ const downloadWordFile = (content: string): void => {
   }
 };
 
+// Thêm state cho download report
+const [isDownloadingReport, setIsDownloadingReport] = useState<string | null>(null);
+
+// ====== HÀM XỬ LÝ CHO MODULE BÁO CÁO ======
+
+// Hàm tải xuống file Excel gốc
+const handleDownloadReport = async (reportId: string) => {
+  try {
+    setIsDownloadingReport(reportId);
+    
+    const response = await fetch(`/api/report/download/${reportId}`, {
+      method: 'GET',
+      headers: getHeaders()
+    });
+
+    if (!response.ok) {
+      let errorMsg = 'Không thể tải file';
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.error || errorMsg;
+      } catch (e) {
+        if (response.status === 404) {
+          errorMsg = 'File không còn tồn tại trên server';
+        }
+      }
+      throw new Error(errorMsg);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Lấy tên file từ response header hoặc từ report
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'bao_cao.xlsx';
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
+      if (match) {
+        filename = decodeURIComponent(match[1]);
+      }
+    }
+    link.download = filename;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    triggerAlert('success', 'Đã tải xuống file báo cáo thành công');
+  } catch (error: any) {
+    console.error('Download report error:', error);
+    triggerAlert('error', error.message || 'Không thể tải file. Vui lòng thử lại.');
+  } finally {
+    setIsDownloadingReport(null);
+  }
+};
+
+// Hàm xuất báo cáo ra Word
+const handleExportReportToWord = (report: any) => {
+  if (!report) {
+    triggerAlert('error', 'Không có dữ liệu để xuất');
+    return;
+  }
+
+  try {
+    // Tạo nội dung HTML cho Word
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' 
+            xmlns:w='urn:schemas-microsoft-com:office:word' 
+            xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset="utf-8">
+        <title>Báo cáo phân tích dữ liệu</title>
+        <style>
+          body { 
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          h1 { 
+            font-size: 20pt;
+            text-align: center;
+            font-weight: bold;
+            margin: 20px 0;
+          }
+          h2 {
+            font-size: 16pt;
+            font-weight: bold;
+            margin: 15px 0;
+          }
+          h3 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin: 10px 0;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+          }
+          .metrics {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+          }
+          .metric {
+            text-align: center;
+          }
+          .metric-value {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #059669;
+          }
+          .metric-label {
+            font-size: 11pt;
+            color: #64748b;
+          }
+          .analysis {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-left: 4px solid #059669;
+            border-radius: 8px;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+            font-size: 11pt;
+            color: #64748b;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 10px 0;
+          }
+          td, th {
+            border: 1px solid #000;
+            padding: 5px 8px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>BÁO CÁO PHÂN TÍCH DỮ LIỆU</h1>
+          <p><strong>Tên báo cáo:</strong> ${report.originalName || 'Không có tên'}</p>
+          <p><strong>Ngày tạo:</strong> ${report.uploadedAt ? new Date(report.uploadedAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')}</p>
+        </div>
+
+        <h2>1. Thống kê tổng quan</h2>
+        <div class="metrics">
+          ${report.metrics?.map((metric: any) => `
+            <div class="metric">
+              <div class="metric-value">${metric.value || 0}</div>
+              <div class="metric-label">${metric.title || ''}</div>
+            </div>
+          `).join('') || '<p>Không có dữ liệu thống kê</p>'}
+        </div>
+
+        <h2>2. Phân tích chi tiết</h2>
+        <div class="analysis">
+          ${report.analysis?.replace(/\n/g, '<br>') || 'Không có dữ liệu phân tích'}
+        </div>
+
+        ${report.charts && report.charts.length > 0 ? `
+          <h2>3. Dữ liệu biểu đồ</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Danh mục</th>
+                <th>Giá trị</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${report.charts.map((item: any) => `
+                <tr>
+                  <td>${item.name || ''}</td>
+                  <td style="text-align: right">${item.value || 0}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        ` : ''}
+
+        <div class="footer">
+          <p>Báo cáo được tạo tự động bởi <strong>GOVAI</strong> - Trợ lý Công vụ Số</p>
+          <p>${new Date().toLocaleString('vi-VN')}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Tạo và tải file Word
+    const blob = new Blob(['\uFEFF' + htmlContent], { 
+      type: 'application/msword;charset=utf-8' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.download = `Bao_cao_phan_tich_${dateStr}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    triggerAlert('success', 'Đã tải xuống báo cáo dạng Word thành công');
+  } catch (error: any) {
+    console.error('Export to Word error:', error);
+    triggerAlert('error', 'Không thể xuất báo cáo. Vui lòng thử lại.');
+  }
+};
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 font-sans" id="govai-app">
       {/* SIDEBAR NAVIGATION */}
@@ -1776,7 +1999,7 @@ const downloadWordFile = (content: string): void => {
                       }`}
                     >
                       <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3 overflow-hidden">
+                        <div className="flex items-center space-x-3 overflow-hidden flex-1">
                           <div className={`p-2 rounded-lg shrink-0 ${
                             selectedReportId === rep.id ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
                           }`}>
@@ -1788,13 +2011,29 @@ const downloadWordFile = (content: string): void => {
                           </div>
                         </div>
 
-                        {/* Delete report button */}
-                        <button
-                          onClick={(e) => handleDeleteReport(rep.id, e)}
-                          className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {/* Action buttons group */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Download button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadReport(rep.id);
+                            }}
+                            className="text-slate-400 hover:text-blue-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                            title="Tải xuống file Excel"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Delete button */}
+                          <button
+                            onClick={(e) => handleDeleteReport(rep.id, e)}
+                            className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                            title="Xóa báo cáo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1809,7 +2048,7 @@ const downloadWordFile = (content: string): void => {
               <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-[calc(100vh-10.5rem)] overflow-y-auto">
                 {currentReport ? (
                   <div className="space-y-6" id="report-details-panel">
-                    {/* Header */}
+                    {/* Header with actions */}
                     <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
                       <div>
                         <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full uppercase">Báo cáo phân tích số liệu tự động</span>
@@ -1855,9 +2094,32 @@ const downloadWordFile = (content: string): void => {
                       </div>
                     )}
 
-                    {/* Narrative generated analysis */}
+                    {/* Narrative generated analysis with copy button */}
                     <div className="space-y-2">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nhận xét & Phân tích chuyên sâu (Bởi Gemini AI)</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nhận xét & Phân tích chuyên sâu (Bởi Gemini AI)</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              if (currentReport.analysis) {
+                                navigator.clipboard.writeText(currentReport.analysis);
+                                triggerAlert('success', 'Đã sao chép nội dung phân tích');
+                              }
+                            }}
+                            className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>Sao chép</span>
+                          </button>
+                          <button
+                            onClick={() => handleExportReportToWord(currentReport)}
+                            className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
+                          >
+                            <FileDown className="w-3 h-3" />
+                            <span>Tải Word</span>
+                          </button>
+                        </div>
+                      </div>
                       <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 text-xs text-slate-700 leading-relaxed font-semibold whitespace-pre-wrap select-text selection:bg-emerald-100">
                         {currentReport.analysis}
                       </div>

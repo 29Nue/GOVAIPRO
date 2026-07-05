@@ -153,12 +153,6 @@ function getGeminiClient(reqHeaders: any) {
 }
 
 // ==================== MODULE 1: SỐ HÓA HỒ SƠ VÀ QUẢN LÝ VĂN BẢN ====================
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 // Cấu hình thư mục uploads
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 

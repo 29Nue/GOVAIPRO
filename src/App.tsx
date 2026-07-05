@@ -654,18 +654,34 @@ export default function App() {
   };
 
   //hàm tải file đã số hóa về
-const handleDownloadDoc = (doc: any) => {
-  const a = document.createElement("a");
-
-  a.href = `http://localhost:2310/uploads/${doc.filename}`;
-
-  a.download = doc.originalName;
-
-  document.body.appendChild(a);
-
-  a.click();
-
-  document.body.removeChild(a);
+const handleDownloadDoc = async (doc: any) => {
+  try {
+    // Sử dụng API endpoint thay vì URL cứng
+    const response = await fetch(`/api/digitize/download/${doc.id}`, {
+      method: 'GET',
+      headers: getHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error('Không thể tải file');
+    }
+    
+    // Tạo blob từ response
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.originalName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    triggerAlert('success', 'Tải file thành công');
+  } catch (error) {
+    triggerAlert('error', 'Không thể tải file. Vui lòng thử lại.');
+    console.error('Download error:', error);
+  }
 };
 
 // Hàm tải xuống file Word

@@ -880,6 +880,8 @@ app.delete('/api/meeting/:id', (req, res) => {
   }
 });
 
+app.use("/uploads", express.static(UPLOADS_DIR));
+
 
 // Serve static files in production or hook Vite in dev
 async function startServer() {
